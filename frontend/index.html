@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Management</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f4f4f4;
+      }
+      h1 {
+        text-align: center;
+      }
+      .form-container {
+        margin-bottom: 20px;
+      }
+      input,
+      button {
+        padding: 10px;
+        margin: 5px;
+        font-size: 16px;
+      }
+      button {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+      }
+      .student-list {
+        margin-top: 30px;
+      }
+      .student-item {
+        background-color: #fff;
+        padding: 10px;
+        margin: 5px;
+        border-radius: 5px;
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Student Management</h1>
+
+    <!-- Create Student Form -->
+    <div class="form-container">
+      <h2>Create Student</h2>
+      <input type="text" id="studentName" placeholder="Name" />
+      <input type="number" id="studentAge" placeholder="Age" />
+      <input type="text" id="studentCourse" placeholder="Course" />
+      <button onclick="createStudent()">Create Student</button>
+    </div>
+
+    <!-- Student List -->
+    <div class="student-list">
+      <h2>Student List</h2>
+      <ul id="studentList">
+        <!-- List of students will appear here -->
+      </ul>
+    </div>
+
+    <script>
+      // API URL
+      const apiUrl = "http://localhost:3000/api/students";
+
+      // Fetch and display all students
+      function fetchStudents() {
+        fetch(apiUrl)
+          .then((response) => response.json())
+          .then((data) => {
+            const studentList = document.getElementById("studentList");
+            studentList.innerHTML = "";
+            if (data.success && Array.isArray(data.data)) {
+              data.data.forEach((student) => {
+                const li = document.createElement("li");
+                li.classList.add("student-item");
+                li.innerHTML = `
+                        <span>${student.name} - ${student.age} - ${student.course}</span>
+                        <button onclick="deleteStudent(${student.id})">Delete</button>
+                        <button onclick="editStudent(${student.id})">Edit</button>
+                    `;
+                studentList.appendChild(li);
+              });
+            } else {
+              console.error("Expected an array but received:", data);
+            }
+          })
+          .catch((error) => console.error("Error fetching students:", error));
+      }
+
+      // Create new student
+      function createStudent() {
+        const name = document.getElementById("studentName").value;
+        const age = document.getElementById("studentAge").value;
+        const course = document.getElementById("studentCourse").value;
+
+        if (name && age && course) {
+          fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ name, age, course }),
+          })
+            .then((response) => response.json())
+            .then(() => {
+              alert("Student created!");
+              fetchStudents();
+              clearForm();
+            })
+            .catch((error) => console.error("Error creating student:", error));
+        } else {
+          alert("Please fill in all fields");
+        }
+      }
+
+      // Delete a student
+      function deleteStudent(id) {
+        fetch(`${apiUrl}/${id}`, {
+          method: "DELETE",
+        })
+          .then((response) => response.json())
+          .then(() => {
+            alert("Student deleted!");
+            fetchStudents();
+          })
+          .catch((error) => console.error("Error deleting student:", error));
+      }
+
+      // Edit a student (for simplicity, just alerting the ID)
+      function editStudent(id) {
+        const name = prompt("Enter new name:");
+        const age = prompt("Enter new age:");
+        const course = prompt("Enter new course:");
+
+        if (name && age && course) {
+          fetch(`${apiUrl}/${id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ name, age, course }),
+          })
+            .then((response) => response.json())
+            .then(() => {
+              alert("Student updated!");
+              fetchStudents();
+            })
+            .catch((error) => console.error("Error updating student:", error));
+        }
+      }
+
+      // Clear form fields
+      function clearForm() {
+        document.getElementById("studentName").value = "";
+        document.getElementById("studentAge").value = "";
+        document.getElementById("studentCourse").value = "";
+      }
+
+      // Load students on page load
+      window.onload = fetchStudents;
+    </script>
+  </body>
+</html>
